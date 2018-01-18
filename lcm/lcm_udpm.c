@@ -1012,15 +1012,17 @@ _setup_recv_parts (lcm_udpm_t *lcm)
         goto setup_recv_thread_fail;
     }
 
-    struct ip_mreq mreq;
-    mreq.imr_multiaddr = lcm->params.mc_addr;
-    mreq.imr_interface.s_addr = INADDR_ANY;
-    // join the multicast group
-    dbg (DBG_LCM, "LCM: joining multicast group\n");
-    if (setsockopt (lcm->recvfd, IPPROTO_IP, IP_ADD_MEMBERSHIP,
-            (char*)&mreq, sizeof (mreq)) < 0) {
-        perror ("setsockopt (IPPROTO_IP, IP_ADD_MEMBERSHIP)");
-        goto setup_recv_thread_fail;
+    if (strcmp( inet_ntoa(lcm->params.mc_addr), "127.0.0.1")!=0) {
+        struct ip_mreq mreq;
+        mreq.imr_multiaddr = lcm->params.mc_addr;
+        mreq.imr_interface.s_addr = INADDR_ANY;
+        // join the multicast group
+        dbg (DBG_LCM, "LCM: joining multicast group\n");
+        if (setsockopt (lcm->recvfd, IPPROTO_IP, IP_ADD_MEMBERSHIP,
+                (char*)&mreq, sizeof (mreq)) < 0) {
+            perror ("setsockopt (IPPROTO_IP, IP_ADD_MEMBERSHIP)");
+            goto setup_recv_thread_fail;
+        }
     }
 
     lcm->inbufs_empty = lcm_buf_queue_new ();
@@ -1196,19 +1198,21 @@ lcm_udpm_create (lcm_t * parent, const char *network, const GHashTable *args)
     // receiving messages when a subscription is made.
 
     // However, we still need to setup sendfd in multi-cast group
-    struct ip_mreq mreq;
-    mreq.imr_multiaddr = lcm->params.mc_addr;
-    mreq.imr_interface.s_addr = INADDR_ANY;
-    dbg (DBG_LCM, "LCM: joining multicast group\n");
-    if (setsockopt (lcm->sendfd, IPPROTO_IP, IP_ADD_MEMBERSHIP,
+    if (strcmp( inet_ntoa(lcm->params.mc_addr), "127.0.0.1")!=0) {
+        struct ip_mreq mreq;
+        mreq.imr_multiaddr = lcm->params.mc_addr;
+        mreq.imr_interface.s_addr = INADDR_ANY;
+        dbg (DBG_LCM, "LCM: joining multicast group\n");
+        if (setsockopt (lcm->sendfd, IPPROTO_IP, IP_ADD_MEMBERSHIP,
             (char*)&mreq, sizeof (mreq)) < 0) {
 #ifdef WIN32
-      // ignore this error in windows... see issue #60
+        // ignore this error in windows... see issue #60
 #else
-        perror ("setsockopt (IPPROTO_IP, IP_ADD_MEMBERSHIP)");
-        lcm_udpm_destroy (lcm);
-        return NULL;
+            perror ("setsockopt (IPPROTO_IP, IP_ADD_MEMBERSHIP)");
+            lcm_udpm_destroy (lcm);
+            return NULL;
 #endif
+        }
     }
 
     return lcm;
