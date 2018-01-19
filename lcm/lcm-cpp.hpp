@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <cstdio>  /* needed for FILE* */
+#include <signal.h>
 #include "lcm.h"
 
 namespace lcm {
@@ -39,7 +40,7 @@ class LCM {
          *
          * @sa lcm_create()
          */
-        inline LCM(std::string lcm_url="");
+        inline LCM(std::string lcm_url="", bool useSIGINT = false);
 
         /**
          * @brief Constructor.
